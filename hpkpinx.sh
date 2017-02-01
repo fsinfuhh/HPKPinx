@@ -2,14 +2,55 @@
 
 set -e
 
-NGINX_ROOT='/etc/nginx'
-HPKPINX_ROOT='/opt/hpkpinx'
-CERT_ROOT="${NGINX_ROOT}/certs"
-MULTIBLE_CERTS=0
-MULTIBLE_HPKP_CONF=0
-STATIC_PIN_FILE=""
 
-. ${HPKPINX_ROOT}/config.sh
+# Find directory in which this script is stored by traversing all symbolic links
+SOURCE="${0}"
+while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
+  DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+  SOURCE="$(readlink "$SOURCE")"
+  [ ${SOURCE} != /* ] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+done
+SCRIPTDIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+
+# Setup default config values, search for and load configuration files
+load_config() {
+  # Check for config in various locations
+  if [ -z "${CONFIG:-}" ]; then
+    for check_config in "/etc/hpkpinx" "/usr/local/etc/hpkpinx" "${PWD}" "${SCRIPTDIR}"; do
+      if [ -f "${check_config}/config.sh" ]; then
+        CONFIG="${check_config}/config.sh"
+        break
+      fi
+    done
+  fi
+
+  # Default values
+  NGINX_ROOT='/etc/nginx'
+  CERT_ROOT="${NGINX_ROOT}/certs"
+  MULTIBLE_CERTS=0
+  MULTIBLE_HPKP_CONF=0
+  STATIC_PIN_FILE=""
+
+  if [ -z "${CONFIG:-}" ]; then
+    echo "#" >&2
+    echo "# !! WARNING !! No main config file found, using default config!" >&2
+    echo "#" >&2
+  elif [ -f "${CONFIG}" ]; then
+    echo "# INFO: Using main config file ${CONFIG}"
+    BASEDIR="$(dirname "${CONFIG}")"
+    # shellcheck disable=SC1090
+    . "${CONFIG}"
+  else
+    _exiterr "Specified config file ${CONFIG} doesn't exist."
+  fi
+}
+
+# Print error message and exit with error
+_exiterr() {
+  echo "ERROR: ${1}" >&2
+  exit 1
+}
+
 
 generate_pin ()
 {
@@ -33,6 +74,8 @@ generate_pin ()
     fi
     echo -n "\"; "
 }
+
+load_config
 
 if [ "$#" -ne 2 ]
 then

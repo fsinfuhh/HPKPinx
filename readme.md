@@ -53,7 +53,14 @@ include hpkp.conf;
 
 # Configuration
 
-The config file is located at `/opt/hpkpinx/config.sh`. You have the following options:
+The default config file is located at `config.sh` inside the git folder. The script is searching the following locations for an config file:
+
+* /etc/hpkpinx/config.sh
+* /usr/local/etc/hpkpinx/config.sh
+* your current working dir (pwd/config.sh)
+* config.sh in the dir the hpkpinx.sh script is
+
+You have the following options:
 
 ### CERT_ROOT
 
