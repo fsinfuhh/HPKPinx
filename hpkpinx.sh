@@ -27,8 +27,7 @@ load_config() {
   # Default values
   NGINX_ROOT='/etc/nginx'
   CERT_ROOT="${NGINX_ROOT}/certs"
-  MULTIBLE_CERTS=0
-  MULTIBLE_HPKP_CONF=0
+  MULTIPLE_HPKP_CONF=0
   STATIC_PIN_FILE=""
 
   if [ -z "${CONFIG:-}" ]; then
@@ -92,13 +91,13 @@ then
 elif [ ${1} = "deploy_cert" ]
 then
     CERT_NAME=${2} # The second argument is the name of the cert
-    if [ ${MULTIBLE_HPKP_CONF} -eq 1 ] # if we want multiple conf files we have to prefix the config file with the name
+    if [ ${MULTIPLE_HPKP_CONF} -eq 1 ] # if we want multiple conf files we have to prefix the config file with the name
     then
         HPKP_CONF=${NGINX_ROOT}/${CERT_NAME}-hpkp.conf
     else
         HPKP_CONF=${NGINX_ROOT}/hpkp.conf
     fi
-    if [ ${STATIC_PIN_FILE} -ne "" ] # if an path to an STATIC_PIN_FILE is set use it
+    if [ ${STATIC_PIN_FILE} != "" ] # if an path to an STATIC_PIN_FILE is set use it
     then
         # get the pin
         STATIC_PIN=$(cat "${STATIC_PIN_FILE}" | grep "${CERT_NAME}" | cut -d ' ' -f 2)
@@ -118,7 +117,7 @@ then
     fi
 
     echo -n "pin-sha256=\"${STATIC_PIN}\"; " >> ${HPKP_CONF}
-    generate_pin "${NGINX_ROOT}/certs/${CERT_NAME}/privkey.pem" >> ${HPKP_CONF}
-    generate_pin "${NGINX_ROOT}/certs/${CERT_NAME}/privkey.roll.pem" >> ${HPKP_CONF}
+    generate_pin "${CERT_ROOT}/${CERT_NAME}/privkey.pem" >> ${HPKP_CONF}
+    generate_pin "${CERT_ROOT}/${CERT_NAME}/privkey.roll.pem" >> ${HPKP_CONF}
     echo "max-age=${HPKP_AGE}';" >> ${HPKP_CONF}
 fi
